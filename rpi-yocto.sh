@@ -27,16 +27,20 @@ sudo apt-get install gawk wget git-core diffstat unzip texinfo gcc-multilib \
 
 sudo apt-get install sysstat -y
 
-VERSION=38
+VERSION=RPIWIFI6
 
 echo "SCRIPTPATH is $SCRIPTPATH"
 
 if [ ! -d "poky" ]; then
 	git clone -b $BRANCH git://git.yoctoproject.org/poky
+else
+	cd poky && git pull && cd ..
 fi
 
 if [ ! -d "meta-openembedded" ]; then
 	git clone -b $BRANCH git://git.openembedded.org/meta-openembedded
+else
+        cd meta-openembedded && git pull && cd ..
 fi
 
 if [ ! -d "meta-raspberrypi" ]; then
@@ -44,12 +48,18 @@ if [ ! -d "meta-raspberrypi" ]; then
 	cd meta-raspberrypi
 	# Fix missing firmware. Next commit changes handling of non-free firmware 
 	# See: http://git.yoctoproject.org/cgit/cgit.cgi/meta-raspberrypi/commit/recipes-kernel/linux-firmware/linux-firmware_%25.bbappend?id=bfc35b773ff405394d066d7d8efb32ced3ac0410
-	git checkout 0c14814f230e90dcb8323b5168ec881a284082d9
+	#git checkout 0c14814f230e90dcb8323b5168ec881a284082d9
+	#git checkout ddc9390c2a371e009c7dbba7005e5d6850083582
+	git checkout -b $BRANCH
 	cd ..
+else
+        cd meta-raspberrypi && git pull && cd ..
 fi
 
 if [ ! -d "openembedded-core" ]; then
 	git clone -b $BRANCH https://github.com/openembedded/openembedded-core.git
+else
+        cd openembedded-core && git pull && cd ..
 fi
 
 cd poky && git checkout $BRANCH && cd $SCRIPTPATH
@@ -80,14 +90,15 @@ source poky/oe-init-build-env $BUILD_DIR
 
 
 DOWNLOAD_CACHE="/mnt/external/yocto-downloads"
-#DOWNLOAD_CACHE="/home/michael/yocto-downloads"
+#DOWNLOAD_CACHE="/home/test/yocto-downloads"
 
-#SSTATE_MIRRORS=" file://.* file:///mnt/remotenfs/sstate-cachePATH "
+
+#SSTATE_MIRRORS=" file://.* file:///mnt/external/sstate-cache/PATH"
 #SSTATE_MIRRORS=/mnt/external/sstate-cache
 SSTATE_CACHE=/mnt/external/sstate-cache
-#SSTATE_CACHEi=/home/michael/yocto-build/sstate-cache$VERSION
+#SSTATE_CACHE=/home/test/yocto-build/sstate-cache$VERSION
 
-TMP_CACHE=/home/michael/yocto-build/tmp$VERSION
+TMP_CACHE=/home/test/yocto-build/tmp$VERSION
 
 
 echo "MACHINE = \"raspberrypi3\"" 			>> conf/local.conf
@@ -104,6 +115,9 @@ echo "DISTRO_FEATURES_append = \" bluez5 bluetooth wifi\" "  >> conf/local.conf
 # linux-firmware-rpidistro
 #  bluez-firmware-rpidistro
 #echo "VIRTUAL-RUNTIME_init_manager = \"systemd\"" 	>> conf/local.conf
+#echo "IMAGE_INSTALL_append = \" linux-firmware-bcm43430 bluez5 i2c-tools python-smbus bridge-utils hostapd dhcp-server iptables wpa-supplicant \""  >> conf/local.conf
+echo "IMAGE_INSTALL_append = \" linux-firmware-rpidistro-bcm43430 bluez5 i2c-tools python-smbus bridge-utils hostapd dhcp-server iptables wpa-supplicant \""  >> conf/local.conf
+
 echo "VIRTUAL-RUNTIME_init_manager = \"sysvinit\"" 	>> conf/local.conf
 #echo "CORE_IMAGE_EXTRA_INSTALL += \"openssh gdbserver \"" >> conf/local.conf
 echo "PACKAGE_CLASSES = \"package_rpm\"" 		>> conf/local.conf
@@ -112,7 +126,7 @@ echo "EXTRA_IMAGE_FEATURES += \" package-management \"" >> conf/local.conf
 
 echo "ENABLE_UART = \"1\"" 				>> conf/local.conf
 echo "DL_DIR ?= \"${DOWNLOAD_CACHE}\""		>> conf/local.conf
-#echo "SSTATE_DIR ?= \"${SSTATE_CACHE}\""	>> conf/local.conf
+echo "SSTATE_DIR ?= \"${SSTATE_CACHE}\""	>> conf/local.conf
 echo "SSTATE_MIRRORS ?= \"${SSTATE_MIRRORS}\""	>> conf/local.conf
 echo "TMPDIR = \"${TMP_CACHE}\""		>> conf/local.conf
 echo "INHERIT += \"buildhistory\""			>> conf/local.conf
@@ -136,9 +150,11 @@ echo "BUILDHISTORY_COMMIT = \"1\""			>> conf/local.conf
 #echo "EXTERNAL_TOOLCHAIN = \"/home/mdick/7.2.1-i686gcc-linaro/gcc-linaro-7.2.1-2017.11-i686_arm-linux-gnueabihf/\""		>> conf/local.conf
 #echo "EXTERNAL_TOOLCHAIN = \"/home/mdick/7.3.1-gcc-linaro/gcc-linaro-7.3.1-2018.05-x86_64_arm-linux-gnueabihf\""		>> conf/local.conf
 
-echo "SDK_EXT_TYPE = \"minimal\"" 			>> conf/local.conf
-#echo "SDK_UPDATE_URL = \"http://my.server.com/path/to/esdk-update\""	>> conf/local.conf
+#echo "SDK_EXT_TYPE = \"minimal\"" 			>> conf/local.conf
+#echo "SDK_UPDATE_URL = \"http://192.168.1.200:80/poky-glibc-x86_64-vci2-image-cortexa7t2hf-neon-vfpv4-toolchain-ext-2.6.sh\""	>> conf/local.conf
 #echo "SDK_INCLUDE_PKGDATA = \"1\""			>> conf/local.conf
+
+#echo "SSTATE_MIRRORS = "file://.* http://192.168.1.200:80/sstate-cache/PATH"  >> conf/sdk-extra.conf
 
 mkdir -p 						"conf/distro"
 
